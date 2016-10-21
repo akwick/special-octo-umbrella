@@ -3,10 +3,10 @@ package main
 import "fmt"
 
 func main() {
-	var iptr, jptr *int
+	var iptr *int
 	i := 42
 	iptr = &i
-	jptr = new(int)
+	jptr := new(int)
 	fmt.Printf("i:     %d\n", i)
 	fmt.Printf("iptr:  %d\n", iptr)
 	fmt.Printf("*iptr: %d\n", *iptr)
