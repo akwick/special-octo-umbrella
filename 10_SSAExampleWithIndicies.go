@@ -3,9 +3,9 @@ package main
 import "fmt"
 
 func main() {
-	s := source()
-	s = "I am a SSA gopher"
-	sink(s)
+	s1 := source()
+	s2 := "I am a SSA gopher"
+	sink(s2)
 }
 
 // copied from 10_FuncAndVarDecl.go

@@ -3,8 +3,13 @@ package main
 import "fmt"
 
 func main() {
+	i := 1
 	s := source()
-	s = "I am a SSA gopher"
+	if i < 1 {
+		s = "I am the zeroth SSA gopher"
+	} else {
+		s = "I am not the zeroth SSA gopher"
+	}
 	sink(s)
 }
 
