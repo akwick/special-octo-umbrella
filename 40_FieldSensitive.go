@@ -3,14 +3,14 @@ package main
 import "fmt"
 
 type SecretGopher struct {
-	secret, public string
+	private, public string
 }
 
 func main() {
-	s1 := SecretGopher{source(), source()}
-	s2 := SecretGopher{source(), "XXX"}
+	s1 := SecretGopher{source(), "XXX"}
+	s2 := SecretGopher{"XXX", "XXX"}
 	sink(s1.public)
-	sink(s2.public)
+	sink(s2.private)
 }
 
 // copied from 10_FuncAndVarDecl.go
