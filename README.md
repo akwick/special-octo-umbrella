@@ -7,6 +7,7 @@ The project name is based upon the suggestion of github.
 * 10: Basics of Go 
 * 20: Pointers in Go
 * 30: Concurrency in Go
+* 40: Static Analysis Examples
 
 # How to Execute the Examples
 
