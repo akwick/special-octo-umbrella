@@ -4,7 +4,7 @@ import "fmt"
 
 func main() {
 	s1 := source()
-	s2 := "I am a SSA gopher"
+	s2 := "I am an SSA gopher"
 	sink(s2)
 }
 

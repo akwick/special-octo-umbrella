@@ -4,11 +4,11 @@ import "fmt"
 
 func main() {
 	i := 1
-	s := source()
+	s := "Hello I am an SSA gopher"
 	if i < 1 {
-		s = "I am the zeroth SSA gopher"
+		s = source()
 	} else {
-		s = "I am not the zeroth SSA gopher"
+		s = "I am another SSA gopher"
 	}
 	sink(s)
 }
