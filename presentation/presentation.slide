@@ -1,0 +1,269 @@
+Information-flow analysis in Go
+Masterthesis of Anna-Katharina Wickert
+16 Jan 2016
+Tags: static analysis, taint analysis, golang, sql injections
+
+Anna-Katharina Wickert
+Technische Universität Darmstadt
+https://github.com/akwick/gotcha
+anna-katharina.wickert@stud.tu-darmstadt.de
+
+: Welcome
+: Skype adjust 
+
+* Motivation
+
+Why do we need a taint analysis for programs in Go? 
+
+#.image images/mcAffee.png
+#.caption McAffee VirusScan Enterprise for Linux/LinuxShield [[https://kc.mcafee.com/corporate/index?page=content&id=SB10181][[0]]]
+
+
+.image http://imgs.xkcd.com/comics/exploits_of_a_mom.png
+.caption Exploits of a mom [[http://xkcd.com/327/][[0] ]]
+
+: SQL Injections still common problem
+: Tiobe index 1
+: can be found by Taint analysis (and other problems too like privacy concern)
+: ----------- 
+
+
+.image images/tiobe.png
+.caption Go as TIOBE Language 2016 [[https://twitter.com/GopherAcademy/status/818186447177949184][[1] ]] 
+
+: Go is a new language
+: but more used in the last years
+: especially webservices 
+
+
+* Goal
+
+Provide the first taint analyis written in Go for Go programs
+
+
+.image https://raw.githubusercontent.com/akwick/gotcha/master/images/gotcha.png _ 600
+.caption Taint Analysis for Go programs to avoid SQL injections [[https://github.com/akwick/gotcha][[2] ]]
+
+: Currently no data flow analysis tool for Go exists
+: taint analysis = special from of data flow analysis
+: increase the number of available static analysis tools in Go
+: help to avoid essential leaks
+: in other languages it is common
+
+* Taint Analysis - The Big Picture 
+
+It is a...
+
+- program analysis
+- static analysis (in our case)
+- data flow analaysis
+
+Idea: ensure secure information flow
+= prevent untrusted/sensitive from reaching sensitive locations
+
+Application examples:
+
+- SQL injections     
+- Leaks             
+- Security guidelines 
+
+: static analysis = overapproximation
+
+
+* Secure Flow 
+What is a secure information flow? 
+
+- Definition by [[http://dl.acm.org/citation.cfm?doid=359636.359712][[Denning and Denning 1977] ]] 
+
+  " Information flows from object x to object y, denoted x => y, 
+  whenever information stored in x, is transferred to, [...], object y. "
+
+: point back = ensure secure information flow = definition of secure information flow
+
+#.background https://golang.org/doc/gopher/doc.png
+#.caption [[https://golang.org/doc/gopher/doc.png][[3] ]]
+
+* Adding Taint Information
+
+
+1) Taint source
+
+- Which data should receive a tag?
+- sensitive information
+
+2) Taint sinks
+
+- Which function should be detected?  
+- sensitive functions
+
+: need a set of sources and sinks to tag variables
+: user defined and decide aim of analysis
+
+* The Go Language
+
+- Created at Google 
+- First stable version 2012
+- imperative language in tradition of C
+- concurrent support (goroutines and channels)
+- structurally typed
+- garbage collected 
+- dynamic race checker
+- higher-order functions (and closures) 
+- ...
+
+
+
+: Different kinds of functions 
+
+: We will use functions to tag sources and sinks. 
+: What are functions in Go?
+
+#* Methods versus Functions
+#
+#- methods as specialized form of functions
+#- method = function with a special first argument 
+#
+#.code code/method.go /START OMIT/,/END OMIT/
+
+
+* Call Order
+
+
+Every function (and method) in Go can be called either:
+- conventionally - in time 
+- deferred - immediately before exit of the function
+- *asynchronously* - at an undefined time spot (see later)
+
+* Concurrency in Go
+
+  " Don't communicate by sharing memory, share memory by communicating! " 
+
+- concurrency = goroutines + channels
+- goroutines : asychron function - keyword go
+- channels: first-class and typed
+
+
+* Concurrency in Go: An Example 
+
+
+#.play code/concurrency1.go
+
+.play -edit concurrency1.go
+
+: add package "time"
+: time.Sleep(3000 * time.Milisecond) 
+
+
+* Taint Analysis more deeply (again ...)
+
+*Recap*:
+
+- Source - function which *taint* data
+- Sink   - function which should not reached by *tainted* data
+- Flow   - information flow from *source* to *sink*
+
+Q: How do we know which functions belong to each set?
+A: Userdefined
+
+: Untaint data? - Sanitizers - future work
+
+
+* Lattice for Taint Analysis
+
+- Uninitialized
+- Tainted
+- Untainted
+- Both
+
+.image images/Lattice.png
+
+
+* Gotcha Is Based On...
+
+Existing packages to implement the analysis:
+
+- SSA representation
+- Points-to analysis (Andersen style)
+
+Combined to:
+
+- interprocedural, context-sensitive analysis 
+- based on Padhye / Khedker, SOAP@PLDI 2013
+- Idea: standard worklist algorithm with calling context and values
+
+* Our Analysis - An Example
+
+Example are parts of a [[https://github.com/akwick/gotcha/blob/master/worklist/conveyThesis_test.go][test]]
+
+.image images/exampleVC.png
+
+
+* How to Handle Channels 
+
+.image images/Example.png
+
+
+* Back to SQL Injections
+
+Q: How can such a framework help to prevent e.g. SQL Injections?
+
+A: By defining a list of sources and sinks. 
+
+
+
+
+Q: What is the advantage from gotcha versus _safesql_ and _gas_? 
+
+A: Gotcha is a more advanced analysis in comparison with _safesql_ and _gas_. 
+This can help to avoid false positives. 
+
+
+* Sqinco - In Short
+
+- GitHub repository with examples for SQL injections 
+- Including benchmarks for the examples
+- Can be executed in a docker container for comparison
+
+1) Which tool reports a SQL Injection for which code?
+
+2) How long does the tools need to analyse the examples?
+
+
+
+: cd go/src/github.com/akwick/sqinco/sqlInjections
+: go test -run=XXX -bench=. 
+
+
+* Sqinco - Conclusion
+
+General aspects:
+- Overapproximations and assumptions can lead to false positives
+- Able to find weak spots for all tools 
+
+SQL Injection comparison:
+- _gotcha_ and _safesql_ similar run times 
+- _gas_ is faster
+- _gas_ and _safesql_ works without defining lists of functions 
+- _gotcha_ needs sources and sinks
+
+
+
+* Put It In a Nutshell
+
+- tradition data-flow analysis for a new language
+- adoptable through lattice and sources/sinks
+
+- have to handle problems available in C (structs and pointers)
+- and problems caused by the channels 
+
+- based on components already available in the Go framework
+- but first taint analysis in Go
+
+- Still open questions and research needed
+: fine tuning of lists
+: how to handle the depth of the ssa framework? 
+:   precompute? cache?
+: more performance and data on real world code
+
+More information: Information Flow Analysis in Go, Isola 2016, E.Bodden, K. I Pun, M. Steffen, V.Stolz, A.-K. Wickert
+
